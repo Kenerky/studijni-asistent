@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Studijní Asistent</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 2rem auto; padding: 0 1rem; background-color: #f4f4f9; color: #333; }
+        .container { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h1 { color: #2c3e50; text-align: center; }
+        
+        .input-group { display: flex; gap: 10px; margin-top: 20px; }
+        input { flex: 1; padding: 12px; border: 2px solid #ddd; border-radius: 6px; font-size: 16px; outline: none; transition: border-color 0.3s; }
+        input:focus { border-color: #28a745; }
+        button { padding: 12px 24px; background-color: #28a745; color: white; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; transition: background 0.3s; font-weight: bold; }
+        button:hover { background-color: #218838; }
+
+        #response { margin-top: 25px; padding: 20px; border-radius: 8px; background: #e8f5e9; border-left: 5px solid #28a745; display: none; line-height: 1.6; }
+        .error { color: #dc3545; margin-top: 10px; font-size: 0.9em; text-align: center; }
+
+        .status-footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 0.85em; color: #666; display: flex; justify-content: space-between; flex-wrap: wrap; }
+        .status-item { margin-bottom: 5px; }
+        .status-label { font-weight: bold; color: #555; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎓 Studijní Asistent</h1>
+        <p style="text-align: center; color: #666;">Zadejte odborný pojem a já ho stručně vysvětlím.</p>
+        
+        <div class="input-group">
+            <input type="text" id="dotaz" placeholder="Např. Docker, API, HTTP..." maxlength="50">
+            <button onclick="poslatDotaz()">Vysvětlit</button>
+        </div>
+        <div id="error-msg" class="error"></div>
+        <div id="response"></div>
+
+        <div class="status-footer" id="status-container">
+            <div class="status-item"><span class="status-label">Autor:</span> <span id="s-autor">Načítám...</span></div>
+            <div class="status-item"><span class="status-label">Téma:</span> <span id="s-tema">...</span></div>
+            <div class="status-item"><span class="status-label">Server Time:</span> <span id="s-time">...</span></div>
+        </div>
+    </div>
+
+    <script>
+        async function nactiStatus() {
+            try {
+                const res = await fetch('/status');
+                const data = await res.json();
+                
+                document.getElementById('s-autor').innerText = data.autor;
+                document.getElementById('s-tema').innerText = data.tema;
+                
+                const datum = new Date(data.time);
+                document.getElementById('s-time').innerText = datum.toLocaleTimeString('cs-CZ');
+            } catch (e) {
+                console.error("Nepodařilo se načíst status:", e);
+                document.getElementById('status-container').innerHTML = "<span style='color:red'>Server neodpovídá</span>";
+            }
+        }
+        async function poslatDotaz() {
+            const input = document.getElementById('dotaz').value.trim();
+            const responseDiv = document.getElementById('response');
+            const errorDiv = document.getElementById('error-msg');
+            
+            if (!input || input.split(' ').length > 6) {
+                errorDiv.innerText = "⚠️ To vypadá jako věta. Zadejte prosím jen konkrétní pojem.";
+                return;
+            }
+            errorDiv.innerText = "";
+            responseDiv.style.display = 'block';
+            responseDiv.innerText = "⏳ Přemýšlím...";
+
+            try {
+                const res = await fetch('/ai', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ dotaz: input })
+                });
+                const data = await res.json();
+                responseDiv.innerText = data.odpoved || data.error;
+            } catch (e) {
+                responseDiv.innerText = "❌ Chyba připojení: " + e;
+            }
+        }
+
+        nactiStatus();
+    </script>
+</body>
+</html>
