@@ -11,9 +11,7 @@ import uvicorn
 from openai import OpenAI
 import httpx
 
-# Vytvoření složky pro DB, pokud neexistuje
-os.makedirs("data", exist_ok=True)
-DB_PATH = "data/asistent.db"
+DB_PATH = "asistent.db"
 
 def init_db():
     conn = sqlite3.connect(DB_PATH)
