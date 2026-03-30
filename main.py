@@ -2,17 +2,18 @@ import os
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
-import requests
 from datetime import datetime
+import uvicorn
+from openai import OpenAI
+import httpx
 
 app = FastAPI(title="Studijní asistent")
+
 api_key = os.environ.get("OPENAI_API_KEY")
 base_url = os.environ.get("OPENAI_BASE_URL")
 
 class Prompt(BaseModel):
     dotaz: str
-
-@app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
 
 @app.get("/", response_class=HTMLResponse)
 def read_root():
@@ -35,24 +36,27 @@ def status():
 def ai(prompt: Prompt):
     system_instruction = (
         f"Jsi přísný výkladový slovník. Uživatel zadal vstup: '{prompt.dotaz}'. "
-        "1. Pokud je to odborný pojem (např. 'DHCP', 'Relativita'), vysvětli ho velmi stručně a jasně. "
+        "1. Pokud je to odborný pojem (např. 'DHCP', 'Relativita'), vysvětli ho velmi stručně a jasně, v jednom dotazu může být i více pojmů. "
         "2. Pokud je to celá věta, pozdrav, nebo otázka typu 'jak se máš', odpověz POUZE větou: "
         "'Zadejte prosím pouze konkrétní pojem k vysvětlení.'"
     )
     
-    headers = {
-        "authorization": f"Bearer {api_key}",
-        "Content-Type": "application/json"
-    }
-
-    payload = {
-        "model": "gemma3:27b",
-        "messages": [{"role":"user","content":system_instruction}]
-    }
-
     try:
-        response = requests.post(base_url, json=payload, headers=headers)
-        data = response.json()
-        return {"odpoved": data.get("response", str(data))}
+        client = OpenAI(
+            api_key=api_key,
+            base_url=base_url,
+            http_client=httpx.Client(verify=False)
+        )
+
+        odpoved = client.chat.completions.create(
+            model="gemma3:27b",
+            messages=[{"role": "user", "content": system_instruction}]
+        )
+        
+        return {"odpoved": odpoved.choices[0].message.content}
     except Exception as e:
         return {"error": str(e)}
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    uvicorn.run(app, host="0.0.0.0", port=port)
