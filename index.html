@@ -6,70 +6,144 @@
     <title>Studijní Asistent</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 2rem auto; padding: 0 1rem; background-color: #f4f4f9; color: #333; }
-        .container { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        h1 { color: #2c3e50; text-align: center; }
+        .container { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        h1, h2 { color: #2c3e50; text-align: center; }
         
-        .input-group { display: flex; gap: 10px; margin-top: 20px; }
-        input { flex: 1; padding: 12px; border: 2px solid #ddd; border-radius: 6px; font-size: 16px; outline: none; transition: border-color 0.3s; }
-        input:focus { border-color: #28a745; }
-        button { padding: 12px 24px; background-color: #28a745; color: white; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; transition: background 0.3s; font-weight: bold; }
+        .input-group, .auth-group { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
+        .row-group { display: flex; gap: 10px; }
+        input { padding: 12px; border: 2px solid #ddd; border-radius: 6px; font-size: 16px; outline: none; width: 100%; box-sizing: border-box; }
+        button { padding: 12px 24px; background-color: #28a745; color: white; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; font-weight: bold; width: 100%; }
         button:hover { background-color: #218838; }
+        button.secondary { background-color: #007bff; }
+        button.secondary:hover { background-color: #0069d9; }
+        button.warning { background-color: #ffc107; color: black; }
 
-        #response { margin-top: 25px; padding: 20px; border-radius: 8px; background: #e8f5e9; border-left: 5px solid #28a745; display: none; line-height: 1.6; }
-        .error { color: #dc3545; margin-top: 10px; font-size: 0.9em; text-align: center; }
+        #response { margin-top: 20px; padding: 20px; border-radius: 8px; background: #e8f5e9; border-left: 5px solid #28a745; display: none; }
+        .error { color: #dc3545; margin-top: 10px; text-align: center; }
+        
+        .hidden { display: none !important; }
+        
+        .test-question { font-size: 1.2em; font-weight: bold; margin-bottom: 15px; }
+        .test-option { display: block; margin: 10px 0; padding: 10px; background: #f8f9fa; border: 1px solid #ddd; border-radius: 6px; cursor: pointer; text-align: left;}
+        .test-option:hover { background: #e2e6ea; }
+        .correct { background: #d4edda !important; border-color: #28a745 !important; }
+        .wrong { background: #f8d7da !important; border-color: #dc3545 !important; }
 
-        .status-footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 0.85em; color: #666; display: flex; justify-content: space-between; flex-wrap: wrap; }
-        .status-item { margin-bottom: 5px; }
-        .status-label { font-weight: bold; color: #555; }
+        .status-footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 0.85em; color: #666; display: flex; justify-content: space-between; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🎓 Studijní Asistent</h1>
-        <p style="text-align: center; color: #666;">Zadejte odborný pojem a já ho stručně vysvětlím.</p>
-        
-        <div class="input-group">
-            <input type="text" id="dotaz" placeholder="Např. Docker, API, HTTP..." maxlength="50">
-            <button onclick="poslatDotaz()">Vysvětlit</button>
-        </div>
-        <div id="error-msg" class="error"></div>
-        <div id="response"></div>
 
-        <div class="status-footer" id="status-container">
-            <div class="status-item"><span class="status-label">Autor:</span> <span id="s-autor">Načítám...</span></div>
-            <div class="status-item"><span class="status-label">Téma:</span> <span id="s-tema">...</span></div>
-            <div class="status-item"><span class="status-label">Server Time:</span> <span id="s-time">...</span></div>
+    <div class="container" id="auth-section">
+        <h1>🔑 Přihlášení</h1>
+        <div class="auth-group">
+            <input type="text" id="username" placeholder="Uživatelské jméno">
+            <input type="password" id="password" placeholder="Heslo">
+            <button onclick="login()">Přihlásit se</button>
+            <button class="secondary" onclick="register()">Vytvořit účet</button>
+            <div id="auth-msg" class="error"></div>
         </div>
     </div>
 
+    <div class="container hidden" id="app-section">
+        <h1>🎓 Studijní Asistent</h1>
+        <div class="row-group">
+            <input type="text" id="dotaz" placeholder="Např. Docker, API..." maxlength="50">
+            <button onclick="poslatDotaz()">Vysvětlit</button>
+        </div>
+        <div id="error-msg" class="error"></div>
+        
+        <div id="response">
+            <div id="ai-text"></div>
+            <button id="save-btn" class="secondary" style="margin-top: 15px;" onclick="ulozitPojem()">Uložit pojem</button>
+        </div>
+
+        <hr style="margin: 30px 0; border: 0; border-top: 1px solid #eee;">
+        
+        <button class="warning" onclick="spustitTest()">Spustit test z uložených pojmů</button>
+        <button onclick="logout()" style="background: transparent; color: #dc3545; border: 1px solid #dc3545; margin-top:10px;">Odhlásit se</button>
+        
+        <div class="status-footer">
+            <span>Autor: <span id="s-autor">...</span></span>
+            <span id="s-time">...</span>
+        </div>
+    </div>
+
+    <div class="container hidden" id="test-section">
+        <h1>Vědomostní Test</h1>
+        <div id="test-content">Načítám test...</div>
+        <button class="secondary hidden" id="next-q-btn" style="margin-top: 20px;" onclick="dalsiOtazka()">Další otázka</button>
+        <button style="margin-top: 20px; background: #6c757d;" onclick="ukoncitTest()">Zpět do aplikace</button>
+    </div>
+
     <script>
-        async function nactiStatus() {
+        let currentTerm = "";
+        let currentExplanation = "";
+        let testData = [];
+        let currentQuestionIndex = 0;
+
+        window.onload = () => {
+            if (localStorage.getItem("token")) {
+                zobrazSekci('app-section');
+                nactiStatus();
+            } else {
+                zobrazSekci('auth-section');
+            }
+        };
+
+        function zobrazSekci(id) {
+            document.getElementById('auth-section').classList.add('hidden');
+            document.getElementById('app-section').classList.add('hidden');
+            document.getElementById('test-section').classList.add('hidden');
+            document.getElementById(id).classList.remove('hidden');
+        }
+
+        async function authRequest(endpoint) {
+            const user = document.getElementById('username').value;
+            const pass = document.getElementById('password').value;
+            const msgDiv = document.getElementById('auth-msg');
+            
+            if (!user || !pass) { msgDiv.innerText = "Vyplňte jméno i heslo."; return; }
+            
             try {
-                const res = await fetch('/status');
+                const res = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({username: user, password: pass})
+                });
                 const data = await res.json();
                 
-                document.getElementById('s-autor').innerText = data.autor;
-                document.getElementById('s-tema').innerText = data.tema;
+                if (!res.ok) throw new Error(data.detail || data.msg);
                 
-                const datum = new Date(data.time);
-                document.getElementById('s-time').innerText = datum.toLocaleTimeString('cs-CZ');
+                if (endpoint === '/login') {
+                    localStorage.setItem("token", data.token);
+                    zobrazSekci('app-section');
+                    nactiStatus();
+                } else {
+                    msgDiv.style.color = "green";
+                    msgDiv.innerText = "Účet vytvořen, nyní se můžete přihlásit.";
+                }
             } catch (e) {
-                console.error("Nepodařilo se načíst status:", e);
-                document.getElementById('status-container').innerHTML = "<span style='color:red'>Server neodpovídá</span>";
+                msgDiv.style.color = "red";
+                msgDiv.innerText = e.message;
             }
         }
+
+        function login() { authRequest('/login'); }
+        function register() { authRequest('/register'); }
+        function logout() { localStorage.removeItem("token"); zobrazSekci('auth-section'); }
+
         async function poslatDotaz() {
             const input = document.getElementById('dotaz').value.trim();
             const responseDiv = document.getElementById('response');
-            const errorDiv = document.getElementById('error-msg');
+            const aiText = document.getElementById('ai-text');
+            const saveBtn = document.getElementById('save-btn');
             
-            if (!input || input.split(' ').length > 6) {
-                errorDiv.innerText = "⚠️ To vypadá jako věta. Zadejte prosím jen konkrétní pojem.";
-                return;
-            }
-            errorDiv.innerText = "";
+            if (!input) return;
+            
             responseDiv.style.display = 'block';
-            responseDiv.innerText = "⏳ Přemýšlím...";
+            saveBtn.classList.add('hidden');
+            aiText.innerText = "Přemýšlím...";
 
             try {
                 const res = await fetch('/ai', {
@@ -78,13 +152,116 @@
                     body: JSON.stringify({ dotaz: input })
                 });
                 const data = await res.json();
-                responseDiv.innerText = data.odpoved || data.error;
+                
+                if(data.error) {
+                    aiText.innerText = "Chyba: " + data.error;
+                } else {
+                    aiText.innerText = data.odpoved;
+                    currentTerm = data.term;
+                    currentExplanation = data.odpoved;
+                    saveBtn.classList.remove('hidden');
+                    saveBtn.innerText = "Uložit pojem";
+                    saveBtn.disabled = false;
+                }
             } catch (e) {
-                responseDiv.innerText = "❌ Chyba připojení: " + e;
+                aiText.innerText = "Chyba připojení.";
             }
         }
 
-        nactiStatus();
+        async function ulozitPojem() {
+            const token = localStorage.getItem("token");
+            const btn = document.getElementById('save-btn');
+            try {
+                const res = await fetch('/save_term', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': token
+                    },
+                    body: JSON.stringify({ term: currentTerm, explanation: currentExplanation })
+                });
+                if(res.ok) {
+                    btn.innerText = "Uloženo!";
+                    btn.disabled = true;
+                }
+            } catch (e) {
+                alert("Nepodařilo se uložit pojem.");
+            }
+        }
+
+        async function spustitTest() {
+            zobrazSekci('test-section');
+            const content = document.getElementById('test-content');
+            content.innerHTML = "Generuji test pomocí AI z tvých uložených pojmů...";
+            document.getElementById('next-q-btn').classList.add('hidden');
+
+            const token = localStorage.getItem("token");
+            try {
+                const res = await fetch('/generate_test', { headers: { 'Authorization': token } });
+                const data = await res.json();
+
+                if (data.error) {
+                    content.innerHTML = `<span class="error">${data.error}</span>`;
+                    return;
+                }
+                
+                testData = data.test;
+                currentQuestionIndex = 0;
+                vykresliOtazku();
+
+            } catch (e) {
+                content.innerHTML = `<span class="error">Chyba při generování testu. Máte uložené nějaké pojmy?</span>`;
+            }
+        }
+
+        function vykresliOtazku() {
+            if (currentQuestionIndex >= testData.length) {
+                document.getElementById('test-content').innerHTML = "<h3>🎉 Test dokončen!</h3>";
+                document.getElementById('next-q-btn').classList.add('hidden');
+                return;
+            }
+
+            const q = testData[currentQuestionIndex];
+            let html = `<div class="test-question">${currentQuestionIndex + 1}. ${q.otazka}</div>`;
+            
+            for (const [key, value] of Object.entries(q.odpovedi)) {
+                html += `<button class="test-option" onclick="zkontrolujOdpoved(this, '${key}', '${q.spravna}')"><b>${key})</b> ${value}</button>`;
+            }
+            
+            document.getElementById('test-content').innerHTML = html;
+            document.getElementById('next-q-btn').classList.add('hidden');
+        }
+
+        function zkontrolujOdpoved(btnElement, vybrana, spravna) {
+            const buttons = document.querySelectorAll('.test-option');
+            buttons.forEach(b => b.disabled = true);
+
+            if (vybrana === spravna) {
+                btnElement.classList.add('correct');
+            } else {
+                btnElement.classList.add('wrong');
+                buttons.forEach(b => {
+                    if (b.innerText.startsWith(spravna)) b.classList.add('correct');
+                });
+            }
+            document.getElementById('next-q-btn').classList.remove('hidden');
+        }
+
+        function dalsiOtazka() {
+            currentQuestionIndex++;
+            vykresliOtazku();
+        }
+
+        function ukoncitTest() {
+            zobrazSekci('app-section');
+        }
+
+        async function nactiStatus() {
+            const res = await fetch('/status');
+            const data = await res.json();
+            document.getElementById('s-autor').innerText = data.autor;
+            document.getElementById('s-time').innerText = new Date(data.time).toLocaleTimeString('cs-CZ');
+        }
     </script>
 </body>
 </html>
