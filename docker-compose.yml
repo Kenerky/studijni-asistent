@@ -3,6 +3,4 @@ services:
   app:
     build: .
     container_name: studijni-asistent
-    volumes:
-      - ./data:/app/data
     restart: unless-stopped
