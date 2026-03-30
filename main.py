@@ -36,7 +36,7 @@ def status():
 def ai(prompt: Prompt):
     system_instruction = (
         f"Jsi přísný výkladový slovník. Uživatel zadal vstup: '{prompt.dotaz}'. "
-        "1. Pokud je to odborný pojem (např. 'DHCP', 'Relativita'), vysvětli ho velmi stručně a jasně, v jednom dotazu může být i více pojmů. "
+        "1. Pokud je to odborný pojem (např. 'DHCP', 'Relativita'), vysvětli ho stručně a jasně, v jednom dotazu může být i více pojmů. "
         "2. Pokud je to celá věta, pozdrav, nebo otázka typu 'jak se máš', odpověz POUZE větou: "
         "'Zadejte prosím pouze konkrétní pojem k vysvětlení.'"
     )
