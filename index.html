@@ -115,7 +115,7 @@
                 
                 if (!res.ok) throw new Error(data.detail || data.msg);
                 
-                if (endpoint === '/login') {
+                if (endpoint === '/prihlaseni') {
                     localStorage.setItem("token", data.token);
                     zobrazSekci('app-section');
                     nactiStatus();
@@ -129,8 +129,8 @@
             }
         }
 
-        function login() { authRequest('/login'); }
-        function register() { authRequest('/register'); }
+        function login() { authRequest('/prihlaseni'); }
+        function register() { authRequest('/registrace'); }
         function logout() { localStorage.removeItem("token"); zobrazSekci('auth-section'); }
 
         async function poslatDotaz() {
