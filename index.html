@@ -9,82 +9,190 @@
         .container { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         h1 { color: #2c3e50; text-align: center; }
         
-        .input-group { display: flex; gap: 10px; margin-top: 20px; }
+        .input-group { display: flex; gap: 10px; margin-top: 20px; flex-direction: column; }
+        .row-group { display: flex; gap: 10px; }
         input { flex: 1; padding: 12px; border: 2px solid #ddd; border-radius: 6px; font-size: 16px; outline: none; transition: border-color 0.3s; }
         input:focus { border-color: #28a745; }
         button { padding: 12px 24px; background-color: #28a745; color: white; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; transition: background 0.3s; font-weight: bold; }
         button:hover { background-color: #218838; }
+        .btn-secondary { background-color: #6c757d; }
+        .btn-secondary:hover { background-color: #5a6268; }
 
         #response { margin-top: 25px; padding: 20px; border-radius: 8px; background: #e8f5e9; border-left: 5px solid #28a745; display: none; line-height: 1.6; }
         .error { color: #dc3545; margin-top: 10px; font-size: 0.9em; text-align: center; }
+        .success { color: #28a745; margin-top: 10px; font-size: 0.9em; text-align: center; }
 
         .status-footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 0.85em; color: #666; display: flex; justify-content: space-between; flex-wrap: wrap; }
-        .status-item { margin-bottom: 5px; }
-        .status-label { font-weight: bold; color: #555; }
+        
+        #app-section { display: none; }
+        .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🎓 Studijní Asistent</h1>
-        <p style="text-align: center; color: #666;">Zadejte odborný pojem a já ho stručně vysvětlím.</p>
         
-        <div class="input-group">
-            <input type="text" id="dotaz" placeholder="Např. Docker, API, HTTP..." maxlength="50">
-            <button onclick="poslatDotaz()">Vysvětlit</button>
+        <div id="auth-section">
+            <h1>🔐 Přihlášení</h1>
+            <div class="input-group">
+                <input type="text" id="username" placeholder="Uživatelské jméno">
+                <input type="password" id="password" placeholder="Heslo">
+                <div class="row-group">
+                    <button onclick="login()" style="flex: 1;">Přihlásit</button>
+                    <button onclick="register()" class="btn-secondary" style="flex: 1;">Registrovat</button>
+                </div>
+            </div>
+            <div id="auth-msg"></div>
         </div>
-        <div id="error-msg" class="error"></div>
-        <div id="response"></div>
 
-        <div class="status-footer" id="status-container">
-            <div class="status-item"><span class="status-label">Autor:</span> <span id="s-autor">Načítám...</span></div>
-            <div class="status-item"><span class="status-label">Téma:</span> <span id="s-tema">...</span></div>
-            <div class="status-item"><span class="status-label">Server Time:</span> <span id="s-time">...</span></div>
+        <div id="app-section">
+            <div class="header-top">
+                <h1>🎓 Studijní Asistent</h1>
+                <button onclick="logout()" class="btn-secondary" style="padding: 8px 16px; font-size: 14px;">Odhlásit</button>
+            </div>
+            <p style="text-align: center; color: #666;">Zadejte odborný pojem a já ho stručně vysvětlím.</p>
+            
+            <div class="row-group" style="margin-top: 20px;">
+                <input type="text" id="dotaz" placeholder="Např. Docker, API, HTTP..." maxlength="50">
+                <button onclick="poslatDotaz()">Vysvětlit</button>
+            </div>
+            <div id="error-msg" class="error"></div>
+            <div id="response"></div>
+
+            <div class="status-footer" id="status-container">
+                <div><b>Autor:</b> <span id="s-autor">Načítám...</span></div>
+                <div><b>Téma:</b> <span id="s-tema">...</span></div>
+                <div><b>Server:</b> <span id="s-time">...</span></div>
+            </div>
         </div>
+
     </div>
 
     <script>
+        const authSection = document.getElementById('auth-section');
+        const appSection = document.getElementById('app-section');
+        const authMsg = document.getElementById('auth-msg');
+
+        window.onload = () => {
+            if(localStorage.getItem('token')) {
+                zobrazAplikaci();
+                nactiStatus();
+            }
+        };
+
+        async function register() {
+            const u = document.getElementById('username').value;
+            const p = document.getElementById('password').value;
+            authMsg.className = ''; authMsg.innerText = 'Načítám...';
+            
+            try {
+                const res = await fetch('/register', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({username: u, password: p})
+                });
+                const data = await res.json();
+                if(res.ok) {
+                    authMsg.className = 'success'; authMsg.innerText = data.message + '. Nyní se přihlaste.';
+                } else {
+                    authMsg.className = 'error'; authMsg.innerText = data.detail;
+                }
+            } catch (e) {
+                authMsg.className = 'error'; authMsg.innerText = 'Chyba připojení.';
+            }
+        }
+
+        async function login() {
+            const u = document.getElementById('username').value;
+            const p = document.getElementById('password').value;
+            authMsg.className = ''; authMsg.innerText = 'Načítám...';
+            
+            const formData = new URLSearchParams();
+            formData.append('username', u);
+            formData.append('password', p);
+
+            try {
+                const res = await fetch('/token', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                    body: formData
+                });
+                const data = await res.json();
+                
+                if(res.ok) {
+                    localStorage.setItem('token', data.access_token);
+                    zobrazAplikaci();
+                    nactiStatus();
+                } else {
+                    authMsg.className = 'error'; authMsg.innerText = data.detail;
+                }
+            } catch (e) {
+                authMsg.className = 'error'; authMsg.innerText = 'Chyba připojení.';
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            appSection.style.display = 'none';
+            authSection.style.display = 'block';
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+            authMsg.innerText = '';
+            document.getElementById('response').style.display = 'none';
+        }
+
+        function zobrazAplikaci() {
+            authSection.style.display = 'none';
+            appSection.style.display = 'block';
+        }
+
         async function nactiStatus() {
             try {
                 const res = await fetch('/status');
                 const data = await res.json();
-                
                 document.getElementById('s-autor').innerText = data.autor;
                 document.getElementById('s-tema').innerText = data.tema;
-                
-                const datum = new Date(data.time);
-                document.getElementById('s-time').innerText = datum.toLocaleTimeString('cs-CZ');
+                document.getElementById('s-time').innerText = new Date(data.time).toLocaleTimeString('cs-CZ');
             } catch (e) {
-                console.error("Nepodařilo se načíst status:", e);
-                document.getElementById('status-container').innerHTML = "<span style='color:red'>Server neodpovídá</span>";
+                document.getElementById('status-container').innerHTML = "<span class='error'>Server neodpovídá</span>";
             }
         }
+
         async function poslatDotaz() {
             const input = document.getElementById('dotaz').value.trim();
             const responseDiv = document.getElementById('response');
             const errorDiv = document.getElementById('error-msg');
+            const token = localStorage.getItem('token');
             
             if (!input || input.split(' ').length > 6) {
-                errorDiv.innerText = "⚠️ To vypadá jako věta. Zadejte prosím jen konkrétní pojem.";
+                errorDiv.innerText = "Zadejte prosím jen konkrétní pojem.";
                 return;
             }
             errorDiv.innerText = "";
             responseDiv.style.display = 'block';
-            responseDiv.innerText = "⏳ Přemýšlím...";
+            responseDiv.innerText = "Přemýšlím...";
 
             try {
                 const res = await fetch('/ai', {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
                     body: JSON.stringify({ dotaz: input })
                 });
+
+                if(res.status === 401) {
+                    logout();
+                    alert("Relace vypršela, přihlaste se prosím znovu.");
+                    return;
+                }
+
                 const data = await res.json();
                 responseDiv.innerText = data.odpoved || data.error;
             } catch (e) {
-                responseDiv.innerText = "❌ Chyba připojení: " + e;
+                responseDiv.innerText = "Chyba připojení: " + e;
             }
         }
-
-        nactiStatus();
     </script>
 </body>
 </html>
