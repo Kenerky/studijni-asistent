@@ -329,7 +329,7 @@
                     toggleAuth();
                 }
             } else {
-                showMessage(d.detail || 'Chyba', 'error');
+                showMessage(d.detail || d.message || 'Chyba', 'error');
             }
         } catch (e) {
             showMessage('Chyba připojení', 'error');
@@ -351,7 +351,18 @@
     function showMessage(msg, type) {
         authMessage.innerHTML = `<div class="${type}"><i class="fas fa-${type === 'error' ? 'exclamation-triangle' : 'check-circle'}"></i> ${msg}</div>`;
     }
-    window.onload = () => { if(localStorage.getItem('token')) { document.getElementById('auth-sec').style.display='none'; document.getElementById('app-sec').style.display='block'; } };
+    function logout() {
+        localStorage.removeItem('token');
+        document.getElementById('auth-sec').style.display = 'block';
+        document.getElementById('app-sec').style.display = 'none';
+        showMessage('Byl(a) jste odhlášen(a).', 'success');
+    }
+    window.onload = () => {
+        if (localStorage.getItem('token')) {
+            document.getElementById('auth-sec').style.display='none';
+            document.getElementById('app-sec').style.display='block';
+        }
+    };
     
     async function ask() {
         if (!q.value.trim()) {
@@ -366,7 +377,7 @@
         try {
             const r = await fetch('/ai', {method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+localStorage.getItem('token')}, body:JSON.stringify({dotaz:q.value})});
             const d = await r.json();
-            response.innerHTML = d.odpoved || d.error;
+            response.innerHTML = getMessageFromResponse(d, 'Chyba při načítání odpovědi');
         } catch (e) {
             response.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Chyba připojení';
         } finally {
@@ -383,7 +394,7 @@
             const r = await fetch('/quiz/generate', {headers:{'Authorization':'Bearer '+localStorage.getItem('token')}});
             const d = await r.json();
             if(d.error) {
-                quizArea.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${d.error}`;
+                quizArea.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${getMessageFromResponse(d, 'Chyba generování testu')}`;
                 return;
             }
             currentQ = d.quiz;
@@ -408,12 +419,16 @@
         try {
             const r = await fetch('/concepts', {headers:{'Authorization':'Bearer '+localStorage.getItem('token')}});
             const d = await r.json();
-            conceptsArea.innerHTML = d.concepts.length ? d.concepts.map(c => `<div class="q-box"><strong>${c.term}</strong><br><small style="color:var(--text-light)">Přidáno: ${c.created_at}</small></div>`).join('') : '<p style="color:var(--text-light); text-align:center;">Žádné pojmy</p>';
+            conceptsArea.innerHTML = d.concepts && d.concepts.length ? d.concepts.map(c => `<div class="q-box"><strong>${c.term}</strong><br><small style="color:var(--text-light)">Přidáno: ${c.created_at}</small></div>`).join('') : '<p style="color:var(--text-light); text-align:center;">Žádné pojmy</p>';
         } catch (e) {
             conceptsArea.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Chyba načítání';
         } finally {
             setLoading(conceptsBtn, document.getElementById('concepts-btn-text'), false);
         }
+    }
+    function getMessageFromResponse(d, fallback) {
+        if (!d) return fallback;
+        return d.odpoved || d.error || d.detail || d.message || fallback;
     }
 </script>
 </body>
