@@ -2,91 +2,397 @@
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Studijní Asistent 2.0</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root { --p: #4F46E5; --bg: #F9FAFB; }
-        body { font-family: sans-serif; background: var(--bg); display: flex; justify-content: center; padding: 40px; }
-        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); width: 100%; max-width: 500px; }
-        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; background: var(--p); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 5px; }
-        .nav { display: flex; gap: 10px; margin-bottom: 20px; }
-        .nav button { background: #eee; color: #333; }
-        .nav button.active { background: var(--p); color: white; }
-        .tab { display: none; }
+        :root {
+            --primary: #4F46E5;
+            --primary-light: #6366F1;
+            --primary-dark: #3730A3;
+            --bg: #F8FAFC;
+            --card-bg: #FFFFFF;
+            --text: #1F2937;
+            --text-light: #6B7280;
+            --border: #E5E7EB;
+            --success: #10B981;
+            --error: #EF4444;
+            --warning: #F59E0B;
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--bg) 0%, #E2E8F0 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .card {
+            background: var(--card-bg);
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 500px;
+            position: relative;
+            overflow: hidden;
+        }
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--primary-light));
+        }
+        h2 {
+            color: var(--text);
+            margin-bottom: 30px;
+            text-align: center;
+            font-weight: 600;
+        }
+        input {
+            width: 100%;
+            padding: 14px 16px;
+            margin: 8px 0 16px 0;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: #FAFAFA;
+        }
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: white;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+        button {
+            width: 100%;
+            padding: 14px 16px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 16px;
+            margin-top: 8px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        button:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+        }
+        button:disabled {
+            background: var(--text-light);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .auth-toggle {
+            text-align: center;
+            margin-top: 20px;
+            color: var(--primary);
+            cursor: pointer;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+        .auth-toggle:hover {
+            color: var(--primary-dark);
+            text-decoration: underline;
+        }
+        .nav {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 30px;
+            background: var(--bg);
+            padding: 6px;
+            border-radius: 10px;
+        }
+        .nav button {
+            background: transparent;
+            color: var(--text-light);
+            border: none;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-weight: 500;
+            flex: 1;
+            transition: all 0.3s ease;
+        }
+        .nav button.active {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
+        }
+        .nav button:hover:not(.active) {
+            background: var(--border);
+            color: var(--text);
+        }
+        .tab {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
         .tab.active { display: block; }
-        #response { background: #f0f4ff; padding: 15px; border-radius: 6px; margin-top: 15px; border-left: 4px solid var(--p); }
-        .q-box { background: #f9f9f9; padding: 10px; margin-bottom: 10px; border-radius: 4px; border: 1px solid #eee; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        #response {
+            background: linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 100%);
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+            border-left: 4px solid var(--primary);
+            color: var(--text);
+            line-height: 1.6;
+        }
+        .q-box {
+            background: #FAFAFA;
+            padding: 16px;
+            margin-bottom: 16px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+        }
+        .q-box:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .error {
+            color: var(--error);
+            font-size: 14px;
+            margin-top: 8px;
+        }
+        .success {
+            color: var(--success);
+            font-size: 14px;
+            margin-top: 8px;
+        }
+        hr {
+            border: none;
+            height: 1px;
+            background: var(--border);
+            margin: 30px 0;
+        }
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .history-item:last-child {
+            border-bottom: none;
+        }
+        .score {
+            font-weight: 600;
+            color: var(--primary);
+        }
+        .date {
+            color: var(--text-light);
+            font-size: 14px;
+        }
+        @media (max-width: 600px) {
+            body { padding: 10px; }
+            .card { padding: 20px; }
+        }
     </style>
 </head>
 <body>
 <div class="card">
     <div id="auth-sec">
-        <h2 id="auth-title">Přihlášení</h2>
-        <input id="u" placeholder="Jméno"> <input id="p" type="password" placeholder="Heslo">
-        <button onclick="handleAuth()" id="auth-btn">Přihlásit se</button>
-        <p style="text-align:center; cursor:pointer; color:blue" onclick="toggleAuth()" id="auth-toggle">Nemáte účet? Registrovat</p>
+        <h2 id="auth-title"><i class="fas fa-user-circle"></i> Přihlášení</h2>
+        <input id="u" placeholder="Uživatelské jméno" type="text">
+        <input id="p" placeholder="Heslo" type="password">
+        <button onclick="handleAuth()" id="auth-btn">
+            <i class="fas fa-sign-in-alt"></i>
+            <span id="auth-btn-text">Přihlásit se</span>
+        </button>
+        <div id="auth-message"></div>
+        <p class="auth-toggle" onclick="toggleAuth()" id="auth-toggle">Nemáte účet? <strong>Registrovat</strong></p>
     </div>
 
     <div id="app-sec" style="display:none">
         <div class="nav">
-            <button onclick="showTab('s')" id="ns" class="active">Slovník</button>
-            <button onclick="showTab('t')" id="nt">Testy</button>
-            <button onclick="logout()" style="background:#ff4444">Odhlásit</button>
+            <button onclick="showTab('s')" id="ns" class="active">
+                <i class="fas fa-book"></i> Slovník
+            </button>
+            <button onclick="showTab('t')" id="nt">
+                <i class="fas fa-brain"></i> Testy
+            </button>
+            <button onclick="showTab('c')" id="nc">
+                <i class="fas fa-list"></i> Pojmy
+            </button>
+            <button onclick="logout()" style="background:var(--error)">
+                <i class="fas fa-sign-out-alt"></i> Odhlásit
+            </button>
         </div>
         <div id="tab-s" class="tab active">
-            <input id="q" placeholder="Zadejte pojem...">
-            <button onclick="ask()">Vysvětlit</button>
+            <input id="q" placeholder="Zadejte pojem, který chcete vysvětlit..." type="text">
+            <button onclick="ask()">
+                <i class="fas fa-search"></i>
+                <span id="ask-btn-text">Vysvětlit</span>
+            </button>
             <div id="response" style="display:none"></div>
         </div>
         <div id="tab-t" class="tab">
-            <button onclick="genQuiz()">Vytvořit test z pojmů</button>
-            <div id="quiz-area" style="margin-top:15px"></div>
-            <hr><h3>Historie</h3><div id="hist"></div>
+            <button onclick="genQuiz()">
+                <i class="fas fa-play"></i>
+                <span id="quiz-btn-text">Vytvořit test z pojmů</span>
+            </button>
+            <div id="quiz-area" style="margin-top:20px"></div>
+            <hr>
+            <h3><i class="fas fa-history"></i> Historie testů</h3>
+            <div id="hist"></div>
+        </div>
+        <div id="tab-c" class="tab">
+            <h3><i class="fas fa-list"></i> Moje naučené pojmy</h3>
+            <button onclick="loadConcepts()">
+                <i class="fas fa-sync"></i>
+                <span id="concepts-btn-text">Načíst pojmy</span>
+            </button>
+            <div id="concepts-area" style="margin-top:20px"></div>
         </div>
     </div>
 </div>
 
 <script>
+    const u = document.getElementById('u');
+    const p = document.getElementById('p');
+    const response = document.getElementById('response');
+    const q = document.getElementById('q');
+    const quizArea = document.getElementById('quiz-area');
+    const hist = document.getElementById('hist');
+    const authBtn = document.getElementById('auth-btn');
+    const authBtnText = document.getElementById('auth-btn-text');
+    const authMessage = document.getElementById('auth-message');
+    const askBtnText = document.getElementById('ask-btn-text');
+    const quizBtnText = document.getElementById('quiz-btn-text');
     let mode = 'login';
     function toggleAuth() {
         mode = mode === 'login' ? 'reg' : 'login';
-        document.getElementById('auth-title').innerText = mode === 'login' ? 'Přihlášení' : 'Registrace';
-        document.getElementById('auth-btn').innerText = mode === 'login' ? 'Přihlásit se' : 'Vytvořit účet';
-        document.getElementById('auth-toggle').innerText = mode === 'login' ? 'Nemáte účet? Registrovat' : 'Máte účet? Přihlásit';
+        document.getElementById('auth-title').innerHTML = `<i class="fas fa-${mode === 'login' ? 'user-circle' : 'user-plus'}"></i> ${mode === 'login' ? 'Přihlášení' : 'Registrace'}`;
+        authBtnText.innerText = mode === 'login' ? 'Přihlásit se' : 'Vytvořit účet';
+        document.getElementById('auth-toggle').innerHTML = mode === 'login' ? 'Nemáte účet? <strong>Registrovat</strong>' : 'Máte účet? <strong>Přihlásit</strong>';
+        authMessage.innerHTML = '';
     }
     function showTab(t) {
         document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
         document.getElementById('tab-'+t).classList.add('active');
         document.getElementById('ns').classList.toggle('active', t==='s');
         document.getElementById('nt').classList.toggle('active', t==='t');
+        document.getElementById('nc').classList.toggle('active', t==='c');
         if(t==='t') loadHist();
+        if(t==='c') loadConcepts();
     }
     async function handleAuth() {
+        if (!u.value || !p.value) {
+            showMessage('Vyplňte všechna pole', 'error');
+            return;
+        }
+        setLoading(authBtn, authBtnText, true);
+        authMessage.innerHTML = '';
         const url = mode === 'login' ? '/token' : '/register';
         const body = mode === 'login' ? new URLSearchParams({username:u.value, password:p.value}) : JSON.stringify({username:u.value, password:p.value});
         const h = mode === 'login' ? {'Content-Type':'application/x-www-form-urlencoded'} : {'Content-Type':'application/json'};
-        const r = await fetch(url, {method:'POST', headers:h, body});
-        const d = await r.json();
-        if(r.ok) { if(mode==='login') { localStorage.setItem('token', d.access_token); location.reload(); } else toggleAuth(); }
-        else alert(d.detail);
+        try {
+            const r = await fetch(url, {method:'POST', headers:h, body});
+            const d = await r.json();
+            if(r.ok) {
+                if(mode==='login') {
+                    localStorage.setItem('token', d.access_token);
+                    location.reload();
+                } else {
+                    showMessage('Registrace úspěšná! Nyní se přihlaste.', 'success');
+                    toggleAuth();
+                }
+            } else {
+                showMessage(d.detail || 'Chyba', 'error');
+            }
+        } catch (e) {
+            showMessage('Chyba připojení', 'error');
+        } finally {
+            setLoading(authBtn, authBtnText, false);
+        }
     }
-    function logout() { localStorage.removeItem('token'); location.reload(); }
-    window.onload = () => { if(localStorage.getItem('token')) { auth-sec.style.display='none'; app-sec.style.display='block'; } };
+    function setLoading(btn, textEl, loading) {
+        btn.disabled = loading;
+        if (loading) {
+            textEl.innerHTML = '<div class="loading"></div>';
+        } else {
+            if (textEl.id === 'auth-btn-text') textEl.innerText = mode === 'login' ? 'Přihlásit se' : 'Vytvořit účet';
+            else if (textEl.id === 'ask-btn-text') textEl.innerText = 'Vysvětlit';
+            else if (textEl.id === 'quiz-btn-text') textEl.innerText = 'Vytvořit test z pojmů';
+            else if (textEl.id === 'concepts-btn-text') textEl.innerText = 'Načíst pojmy';
+        }
+    }
+    function showMessage(msg, type) {
+        authMessage.innerHTML = `<div class="${type}"><i class="fas fa-${type === 'error' ? 'exclamation-triangle' : 'check-circle'}"></i> ${msg}</div>`;
+    }
+    window.onload = () => { if(localStorage.getItem('token')) { document.getElementById('auth-sec').style.display='none'; document.getElementById('app-sec').style.display='block'; } };
     
     async function ask() {
-        response.style.display='block'; response.innerText='⏳...';
-        const r = await fetch('/ai', {method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+localStorage.getItem('token')}, body:JSON.stringify({dotaz:q.value})});
-        const d = await r.json(); response.innerText = d.odpoved || d.error;
+        if (!q.value.trim()) {
+            response.style.display='block';
+            response.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Zadejte pojem';
+            return;
+        }
+        response.style.display='block';
+        response.innerHTML = '<div class="loading"></div> Načítání...';
+        const askBtn = document.querySelector('#tab-s button');
+        setLoading(askBtn, askBtnText, true);
+        try {
+            const r = await fetch('/ai', {method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+localStorage.getItem('token')}, body:JSON.stringify({dotaz:q.value})});
+            const d = await r.json();
+            response.innerHTML = d.odpoved || d.error;
+        } catch (e) {
+            response.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Chyba připojení';
+        } finally {
+            setLoading(askBtn, askBtnText, false);
+        }
     }
 
     let currentQ = [];
     async function genQuiz() {
-        quiz-area.innerText = 'Generování...';
-        const r = await fetch('/quiz/generate', {headers:{'Authorization':'Bearer '+localStorage.getItem('token')}});
-        const d = await r.json();
-        if(d.error) { quiz-area.innerText = d.error; return; }
-        currentQ = d.quiz;
-        quiz-area.innerHTML = d.quiz.map((x,i) => `<div class="q-box"><b>${x.otazka}</b><br>` + x.moznosti.map((m,j) => `<label><input type="radio" name="q${i}" value="${j}">${m}</label><br>`).join('') + `</div>`).join('') + `<button onclick="check()">Odeslat</button>`;
+        quizArea.innerHTML = '<div class="loading"></div> Generování testu...';
+        const quizBtn = document.querySelector('#tab-t button');
+        setLoading(quizBtn, quizBtnText, true);
+        try {
+            const r = await fetch('/quiz/generate', {headers:{'Authorization':'Bearer '+localStorage.getItem('token')}});
+            const d = await r.json();
+            if(d.error) {
+                quizArea.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${d.error}`;
+                return;
+            }
+            currentQ = d.quiz;
+            quizArea.innerHTML = d.quiz.map((x,i) => `<div class="q-box"><b>${i+1}. ${x.otazka}</b><br>` + x.moznosti.map((m,j) => `<label><input type="radio" name="q${i}" value="${j}"> ${m}</label><br>`).join('') + `</div>`).join('') + `<button onclick="check()" style="margin-top:20px;"><i class="fas fa-check"></i> Odeslat test</button>`;
+        } catch (e) {
+            quizArea.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Chyba připojení';
+        } finally {
+            setLoading(quizBtn, quizBtnText, false);
+        }
     }
     async function check() {
         let s = 0; currentQ.forEach((x,i) => { if(document.querySelector(`input[name="q${i}"]:checked`)?.value == x.spravna_index) s++; });
@@ -94,10 +400,20 @@
         await fetch('/quiz/save', {method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+localStorage.getItem('token')}, body:JSON.stringify({score:res})});
         loadHist();
     }
-    async function loadHist() {
-        const r = await fetch('/quiz/history', {headers:{'Authorization':'Bearer '+localStorage.getItem('token')}});
-        const d = await r.json();
-        hist.innerHTML = d.history.map(x => `<div style="display:flex;justify-content:space-between;font-size:13px"><span>${x.date}</span><b>${x.score}</b></div>`).join('');
+    async function loadConcepts() {
+        const conceptsArea = document.getElementById('concepts-area');
+        conceptsArea.innerHTML = '<div class="loading"></div> Načítání...';
+        const conceptsBtn = document.querySelector('#tab-c button');
+        setLoading(conceptsBtn, document.getElementById('concepts-btn-text'), true);
+        try {
+            const r = await fetch('/concepts', {headers:{'Authorization':'Bearer '+localStorage.getItem('token')}});
+            const d = await r.json();
+            conceptsArea.innerHTML = d.concepts.length ? d.concepts.map(c => `<div class="q-box"><strong>${c.term}</strong><br><small style="color:var(--text-light)">Přidáno: ${c.created_at}</small></div>`).join('') : '<p style="color:var(--text-light); text-align:center;">Žádné pojmy</p>';
+        } catch (e) {
+            conceptsArea.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Chyba načítání';
+        } finally {
+            setLoading(conceptsBtn, document.getElementById('concepts-btn-text'), false);
+        }
     }
 </script>
 </body>

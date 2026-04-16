@@ -126,6 +126,11 @@ def ai(prompt: Prompt, current_user: User = Depends(get_current_user), db: Sessi
         return {"odpoved": odpoved}
     except Exception as e: return {"error": str(e)}
 
+@app.get("/concepts")
+def get_concepts(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    concepts = db.query(Concept).filter(Concept.user_id == current_user.id).order_by(Concept.created_at.desc()).all()
+    return {"concepts": [{"id": c.id, "term": c.term, "created_at": c.created_at.strftime("%d.%m.%Y %H:%M")} for c in concepts]}
+
 @app.get("/quiz/generate")
 def generate_quiz(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     concepts_db = db.query(Concept).filter(Concept.user_id == current_user.id).all()
