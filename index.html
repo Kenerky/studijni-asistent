@@ -2,197 +2,103 @@
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Studijní Asistent</title>
+    <title>Studijní Asistent 2.0</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 2rem auto; padding: 0 1rem; background-color: #f4f4f9; color: #333; }
-        .container { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        h1 { color: #2c3e50; text-align: center; }
-        
-        .input-group { display: flex; gap: 10px; margin-top: 20px; flex-direction: column; }
-        .row-group { display: flex; gap: 10px; }
-        input { flex: 1; padding: 12px; border: 2px solid #ddd; border-radius: 6px; font-size: 16px; outline: none; transition: border-color 0.3s; }
-        input:focus { border-color: #28a745; }
-        button { padding: 12px 24px; background-color: #28a745; color: white; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; transition: background 0.3s; font-weight: bold; }
-        button:hover { background-color: #218838; }
-        .btn-secondary { background-color: #6c757d; }
-        .btn-secondary:hover { background-color: #5a6268; }
-
-        #response { margin-top: 25px; padding: 20px; border-radius: 8px; background: #e8f5e9; border-left: 5px solid #28a745; display: none; line-height: 1.6; }
-        .error { color: #dc3545; margin-top: 10px; font-size: 0.9em; text-align: center; }
-        .success { color: #28a745; margin-top: 10px; font-size: 0.9em; text-align: center; }
-
-        .status-footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 0.85em; color: #666; display: flex; justify-content: space-between; flex-wrap: wrap; }
-        
-        #app-section { display: none; }
-        .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        :root { --p: #4F46E5; --bg: #F9FAFB; }
+        body { font-family: sans-serif; background: var(--bg); display: flex; justify-content: center; padding: 40px; }
+        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); width: 100%; max-width: 500px; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background: var(--p); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 5px; }
+        .nav { display: flex; gap: 10px; margin-bottom: 20px; }
+        .nav button { background: #eee; color: #333; }
+        .nav button.active { background: var(--p); color: white; }
+        .tab { display: none; }
+        .tab.active { display: block; }
+        #response { background: #f0f4ff; padding: 15px; border-radius: 6px; margin-top: 15px; border-left: 4px solid var(--p); }
+        .q-box { background: #f9f9f9; padding: 10px; margin-bottom: 10px; border-radius: 4px; border: 1px solid #eee; }
     </style>
 </head>
 <body>
-    <div class="container">
-        
-        <div id="auth-section">
-            <h1>🔐 Přihlášení</h1>
-            <div class="input-group">
-                <input type="text" id="username" placeholder="Uživatelské jméno">
-                <input type="password" id="password" placeholder="Heslo">
-                <div class="row-group">
-                    <button onclick="login()" style="flex: 1;">Přihlásit</button>
-                    <button onclick="register()" class="btn-secondary" style="flex: 1;">Registrovat</button>
-                </div>
-            </div>
-            <div id="auth-msg"></div>
-        </div>
-
-        <div id="app-section">
-            <div class="header-top">
-                <h1>🎓 Studijní Asistent</h1>
-                <button onclick="logout()" class="btn-secondary" style="padding: 8px 16px; font-size: 14px;">Odhlásit</button>
-            </div>
-            <p style="text-align: center; color: #666;">Zadejte odborný pojem a já ho stručně vysvětlím.</p>
-            
-            <div class="row-group" style="margin-top: 20px;">
-                <input type="text" id="dotaz" placeholder="Např. Docker, API, HTTP..." maxlength="50">
-                <button onclick="poslatDotaz()">Vysvětlit</button>
-            </div>
-            <div id="error-msg" class="error"></div>
-            <div id="response"></div>
-
-            <div class="status-footer" id="status-container">
-                <div><b>Autor:</b> <span id="s-autor">Načítám...</span></div>
-                <div><b>Téma:</b> <span id="s-tema">...</span></div>
-                <div><b>Server:</b> <span id="s-time">...</span></div>
-            </div>
-        </div>
-
+<div class="card">
+    <div id="auth-sec">
+        <h2 id="auth-title">Přihlášení</h2>
+        <input id="u" placeholder="Jméno"> <input id="p" type="password" placeholder="Heslo">
+        <button onclick="handleAuth()" id="auth-btn">Přihlásit se</button>
+        <p style="text-align:center; cursor:pointer; color:blue" onclick="toggleAuth()" id="auth-toggle">Nemáte účet? Registrovat</p>
     </div>
 
-    <script>
-        const authSection = document.getElementById('auth-section');
-        const appSection = document.getElementById('app-section');
-        const authMsg = document.getElementById('auth-msg');
+    <div id="app-sec" style="display:none">
+        <div class="nav">
+            <button onclick="showTab('s')" id="ns" class="active">Slovník</button>
+            <button onclick="showTab('t')" id="nt">Testy</button>
+            <button onclick="logout()" style="background:#ff4444">Odhlásit</button>
+        </div>
+        <div id="tab-s" class="tab active">
+            <input id="q" placeholder="Zadejte pojem...">
+            <button onclick="ask()">Vysvětlit</button>
+            <div id="response" style="display:none"></div>
+        </div>
+        <div id="tab-t" class="tab">
+            <button onclick="genQuiz()">Vytvořit test z pojmů</button>
+            <div id="quiz-area" style="margin-top:15px"></div>
+            <hr><h3>Historie</h3><div id="hist"></div>
+        </div>
+    </div>
+</div>
 
-        window.onload = () => {
-            if(localStorage.getItem('token')) {
-                zobrazAplikaci();
-                nactiStatus();
-            }
-        };
+<script>
+    let mode = 'login';
+    function toggleAuth() {
+        mode = mode === 'login' ? 'reg' : 'login';
+        document.getElementById('auth-title').innerText = mode === 'login' ? 'Přihlášení' : 'Registrace';
+        document.getElementById('auth-btn').innerText = mode === 'login' ? 'Přihlásit se' : 'Vytvořit účet';
+        document.getElementById('auth-toggle').innerText = mode === 'login' ? 'Nemáte účet? Registrovat' : 'Máte účet? Přihlásit';
+    }
+    function showTab(t) {
+        document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+        document.getElementById('tab-'+t).classList.add('active');
+        document.getElementById('ns').classList.toggle('active', t==='s');
+        document.getElementById('nt').classList.toggle('active', t==='t');
+        if(t==='t') loadHist();
+    }
+    async function handleAuth() {
+        const url = mode === 'login' ? '/token' : '/register';
+        const body = mode === 'login' ? new URLSearchParams({username:u.value, password:p.value}) : JSON.stringify({username:u.value, password:p.value});
+        const h = mode === 'login' ? {'Content-Type':'application/x-www-form-urlencoded'} : {'Content-Type':'application/json'};
+        const r = await fetch(url, {method:'POST', headers:h, body});
+        const d = await r.json();
+        if(r.ok) { if(mode==='login') { localStorage.setItem('token', d.access_token); location.reload(); } else toggleAuth(); }
+        else alert(d.detail);
+    }
+    function logout() { localStorage.removeItem('token'); location.reload(); }
+    window.onload = () => { if(localStorage.getItem('token')) { auth-sec.style.display='none'; app-sec.style.display='block'; } };
+    
+    async function ask() {
+        response.style.display='block'; response.innerText='⏳...';
+        const r = await fetch('/ai', {method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+localStorage.getItem('token')}, body:JSON.stringify({dotaz:q.value})});
+        const d = await r.json(); response.innerText = d.odpoved || d.error;
+    }
 
-        async function register() {
-            const u = document.getElementById('username').value;
-            const p = document.getElementById('password').value;
-            authMsg.className = ''; authMsg.innerText = 'Načítám...';
-            
-            try {
-                const res = await fetch('/register', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({username: u, password: p})
-                });
-                const data = await res.json();
-                if(res.ok) {
-                    authMsg.className = 'success'; authMsg.innerText = data.message + '. Nyní se přihlaste.';
-                } else {
-                    authMsg.className = 'error'; authMsg.innerText = data.detail;
-                }
-            } catch (e) {
-                authMsg.className = 'error'; authMsg.innerText = 'Chyba připojení.';
-            }
-        }
-
-        async function login() {
-            const u = document.getElementById('username').value;
-            const p = document.getElementById('password').value;
-            authMsg.className = ''; authMsg.innerText = 'Načítám...';
-            
-            const formData = new URLSearchParams();
-            formData.append('username', u);
-            formData.append('password', p);
-
-            try {
-                const res = await fetch('/token', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                    body: formData
-                });
-                const data = await res.json();
-                
-                if(res.ok) {
-                    localStorage.setItem('token', data.access_token);
-                    zobrazAplikaci();
-                    nactiStatus();
-                } else {
-                    authMsg.className = 'error'; authMsg.innerText = data.detail;
-                }
-            } catch (e) {
-                authMsg.className = 'error'; authMsg.innerText = 'Chyba připojení.';
-            }
-        }
-
-        function logout() {
-            localStorage.removeItem('token');
-            appSection.style.display = 'none';
-            authSection.style.display = 'block';
-            document.getElementById('username').value = '';
-            document.getElementById('password').value = '';
-            authMsg.innerText = '';
-            document.getElementById('response').style.display = 'none';
-        }
-
-        function zobrazAplikaci() {
-            authSection.style.display = 'none';
-            appSection.style.display = 'block';
-        }
-
-        async function nactiStatus() {
-            try {
-                const res = await fetch('/status');
-                const data = await res.json();
-                document.getElementById('s-autor').innerText = data.autor;
-                document.getElementById('s-tema').innerText = data.tema;
-                document.getElementById('s-time').innerText = new Date(data.time).toLocaleTimeString('cs-CZ');
-            } catch (e) {
-                document.getElementById('status-container').innerHTML = "<span class='error'>Server neodpovídá</span>";
-            }
-        }
-
-        async function poslatDotaz() {
-            const input = document.getElementById('dotaz').value.trim();
-            const responseDiv = document.getElementById('response');
-            const errorDiv = document.getElementById('error-msg');
-            const token = localStorage.getItem('token');
-            
-            if (!input || input.split(' ').length > 6) {
-                errorDiv.innerText = "Zadejte prosím jen konkrétní pojem.";
-                return;
-            }
-            errorDiv.innerText = "";
-            responseDiv.style.display = 'block';
-            responseDiv.innerText = "Přemýšlím...";
-
-            try {
-                const res = await fetch('/ai', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ' + token
-                    },
-                    body: JSON.stringify({ dotaz: input })
-                });
-
-                if(res.status === 401) {
-                    logout();
-                    alert("Relace vypršela, přihlaste se prosím znovu.");
-                    return;
-                }
-
-                const data = await res.json();
-                responseDiv.innerText = data.odpoved || data.error;
-            } catch (e) {
-                responseDiv.innerText = "Chyba připojení: " + e;
-            }
-        }
-    </script>
+    let currentQ = [];
+    async function genQuiz() {
+        quiz-area.innerText = 'Generování...';
+        const r = await fetch('/quiz/generate', {headers:{'Authorization':'Bearer '+localStorage.getItem('token')}});
+        const d = await r.json();
+        if(d.error) { quiz-area.innerText = d.error; return; }
+        currentQ = d.quiz;
+        quiz-area.innerHTML = d.quiz.map((x,i) => `<div class="q-box"><b>${x.otazka}</b><br>` + x.moznosti.map((m,j) => `<label><input type="radio" name="q${i}" value="${j}">${m}</label><br>`).join('') + `</div>`).join('') + `<button onclick="check()">Odeslat</button>`;
+    }
+    async function check() {
+        let s = 0; currentQ.forEach((x,i) => { if(document.querySelector(`input[name="q${i}"]:checked`)?.value == x.spravna_index) s++; });
+        const res = `${s}/${currentQ.length}`; alert(`Skóre: ${res}`);
+        await fetch('/quiz/save', {method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+localStorage.getItem('token')}, body:JSON.stringify({score:res})});
+        loadHist();
+    }
+    async function loadHist() {
+        const r = await fetch('/quiz/history', {headers:{'Authorization':'Bearer '+localStorage.getItem('token')}});
+        const d = await r.json();
+        hist.innerHTML = d.history.map(x => `<div style="display:flex;justify-content:space-between;font-size:13px"><span>${x.date}</span><b>${x.score}</b></div>`).join('');
+    }
+</script>
 </body>
 </html>
